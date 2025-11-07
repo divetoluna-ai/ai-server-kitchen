@@ -340,31 +340,4 @@
                         .replace(/\n\n/g, '<br><br>') // 단락 나누기
                         .replace(/\n/g, '<br>')   // 줄바꿈
                         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') // 굵은 글씨
-                        .replace(/🥇/g, '🏆'); // 아이콘
-                    
-                    // 5. 결과 화면으로 전환
-                    showPage(pageResults);
-                    
-                } else {
-                    throw new Error(data.error || "알 수 없는 오류");
-                }
-
-            } catch (error) {
-                // 6. 에러가 나면 알려줌
-                console.error("AI 서버 통신 오류:", error);
-                showPage(pageSimulator); // 3단계 화면으로 복귀
-                alert(`AI 서버 분석 중 오류가 발생했습니다: ${error.message}`);
-            }
-        });
-
-        // --- 5. 화면 전환 버튼들 ---
-        
-        // 4 -> 1 (다시 시뮬레이션)
-        restartBtn4.addEventListener('click', () => showPage(pageSimulator));
-
-        // --- 6. 앱 시작 ---
-        showPage(pageSimulator); // 첫 화면은 시뮬레이터
-        
-    </script>
-</body>
-</html>
+                        .replace(/
