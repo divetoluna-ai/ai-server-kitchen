@@ -1,12 +1,12 @@
-# 파일명: app.py
-# ----------------------------------------------------
-# AI 여가 큐레이션 백엔드 서버 (Flask)
-# ----------------------------------------------------
+# =========================================================================
+# 🤖 파일명: app.py (v26 - AI 서버와 웹사이트 일체형)
+# =========================================================================
 import joblib
 import pandas as pd
 import numpy as np
-from flask import Flask, request, jsonify
-from flask_cors import CORS # [중요] Netlify가 접속할 수 있게 허용
+# [v26] render_template: 'index.html'을 메뉴판으로 나눠주기 위해
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 import warnings
 import os
 
@@ -44,7 +44,8 @@ SEARCH_SPACE = {
 }
 
 # --- Flask 서버 앱 생성 ---
-app = Flask(__name__)
+# [v26] 'templates' 폴더에서 index.html을 찾도록 설정
+app = Flask(__name__, template_folder='templates')
 CORS(app) # 모든 '온라인 주소' (Netlify 등)의 접속을 허용
 
 # --- AI 예측 헬퍼 함수 ---
@@ -58,13 +59,22 @@ def get_prediction(current_inputs):
     prob_5star = loaded_model.predict_proba(input_df)[0][1]
     return prob_5star
 
-# --- API 엔드포인트 (Netlify가 호출할 주소) ---
+# --- [v26] '메뉴판'을 보여주는 라우트 ---
+@app.route('/', methods=['GET'])
+def home():
+    """
+    손님이 '온라인 주소'('/')로 접속하면,
+    'templates/index.html' 파일을 찾아서 보여줍니다.
+    """
+    return render_template('index.html')
+
+# --- [v26] 'AI 셰프'가 주문을 받는 라우트 ---
 @app.route('/predict', methods=['POST'])
 def predict_and_recommend():
     global CURRENT_MODEL_VERSION
     
     try:
-        # 1. Netlify로부터 JSON 입력 받기
+        # 1. 웹사이트로부터 JSON 입력 받기
         inputs = request.json
         
         # 2. '현재 확률' 계산
@@ -79,11 +89,8 @@ def predict_and_recommend():
             '문화예술스포츠참여동반자': inputs.get('partner'),
             '전반적여가생활만족도_인프라': inputs.get('infra_sat'),
             '전반적여가생활만족도_시간': inputs.get('time_sat'),
-            '거주지': "서울", # 기본값
-            '문화예술스포츠비용금액': 50000, # 기본값
-            '문화예술스포츠참여빈도': 1.5, # 기본값
-            'B0101020802': 0, # 기본값
-            '문화예술스포츠참여지역': np.nan # 기본값
+            '거주지': "서울", '문화예술스포츠비용금액': 50000, '문화예술스포츠참여빈도': 1.5,
+            'B0101020802': 0, '문화예술스포츠참여지역': np.nan
         }
         baseline_prob = get_prediction(current_inputs)
         baseline_prob_pct = baseline_prob * 100
@@ -112,7 +119,6 @@ def predict_and_recommend():
         recommendations = [f"AI가 {len(simulation_results)}개의 모든 여가 조합을 시뮬레이션 했습니다."]
         recommendations.append(f"귀하의 고정 정보(나이, 직업, 성별 등)를 기준으로,\n5점 만족 확률이 가장 높은 **Top 3 궤적**은 다음과 같습니다.")
         
-        top_trajectories = []
         for i in range(3):
             prob, p_name, a_name, t_name = simulation_results[i]
             recommendations.append(
@@ -121,11 +127,8 @@ def predict_and_recommend():
                 f"   - **활동:** {a_name}\n"
                 f"   - **동반자:** {t_name}"
             )
-            top_trajectories.append({"rank": i+1, "prob": round(prob*100, 1), "p_name": p_name, "a_name": a_name, "t_name": t_name})
         
-        # (v22의 '지속적 학습' 로직은 Render 서버에서는 파일 쓰기 권한 문제로 단순화합니다.)
-        
-        # 6. Netlify에 JSON으로 결과 응답
+        # 6. 웹사이트에 JSON으로 결과 응답
         return jsonify({
             "success": True,
             "model_version": MODEL_VERSION,
