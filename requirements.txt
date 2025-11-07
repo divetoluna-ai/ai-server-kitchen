@@ -1,7 +1,7 @@
-flask
-flask_cors
+flask==2.3.3
+flask_cors==4.0.0
 scikit-learn==1.4.2
-pandas
-numpy
-joblib
-firebase-admin
+pandas==2.2.2
+numpy==1.26.4
+joblib==1.4.2
+firebase-admin==6.5.0
