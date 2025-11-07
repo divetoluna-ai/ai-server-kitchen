@@ -1,0 +1,6 @@
+# Google Cloud 비밀 키
+serviceAccountKey.json
+firebase-service-account.json
+
+# Python 가상 환경
+.venv/
