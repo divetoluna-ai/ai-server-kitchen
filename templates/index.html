@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 여가 큐레이션 (v24 - Render 연동)</title>
+    <title>AI 여가 큐레이션 (v28)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -71,23 +71,7 @@
         /* 결과창 디자인 */
         #result-card { background-color: #F0FDF4; border-left: 5px solid #10B981; border-radius: 8px; padding: 1.5rem; }
         #result-title { color: #065F46; border-bottom: 2px solid #6EE7B7; }
-        #history-accordion { border: 1px solid #D1FAE5; border-radius: 8px; }
-        /* [요청 2] '전화번호 변경' 아코디언을 버튼처럼 */
-        #phone-accordion summary { /* 아코디언 헤더 */
-            background-color: #F9FAFB;
-            border: 1px solid #D1D5DB;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            font-weight: 500;
-            color: #374151;
-            list-style: none; /* 화살표 제거 */
-        }
-        #phone-accordion summary::-webkit-details-marker { display: none; } /* 화살표 제거 */
-        #phone-accordion summary:hover { background-color: #F3F4F6; }
-        #phone-accordion[open] summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        #phone-accordion > div { padding: 1rem; border: 1px solid #D1D5DB; border-top: 0; border-radius: 0 0 8px 8px; }
-
+        
         /* [요청 3] '기반 만족도' 부연설명 텍스트 */
         .description-text { 
             color: #4B5563; 
@@ -107,7 +91,7 @@
             width: 100%; /* 모바일 대응 */
         }
         @media (min-width: 640px) { /* PC에서는 버튼 너비 자동 */
-             .g-button { width: auto; }
+             .g-button { width: 100%; } /* v25에서는 항상 100% */
         }
         button.primary { background: #0D9488; color: white; } /* 청록색 */
         button.primary:hover { background: #0F766E; }
@@ -116,8 +100,6 @@
             border: 1px solid #0284C7;
         }
         button.secondary:hover { background: #E0F2FE; }
-        /* [요청 1] 비활성화된 버튼 */
-        button.primary:disabled { background: #9CA3AF; cursor: not-allowed; }
         
         /* 개인정보보호 문구 (요청 4) */
         #privacy-text { font-size: 12px; color: #6B7280; text-align: center; margin-top: 1.5rem; }
@@ -128,8 +110,8 @@
     <div id="app-container">
         
         <header class="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center">
-            <h1 class="text-3xl font-bold">AI 여가 컨설턴트 (v24 - Render)</h1>
-            <p class="mt-2 text-blue-100">당신의 완벽한 여가 생활을 찾아보세요</p>
+            <h1 class="text-3xl font-bold">AI 여가 컨설턴트 (v28)</h1>
+            <p class="mt-2 text-blue-100">AI 궤적 시뮬레이터</p>
         </header>
 
         <div id="loading" class="text-center p-8 hidden">
@@ -140,49 +122,13 @@
             <p class="mt-4 text-gray-600">AI가 504개의 궤적을 시뮬레이션 중입니다...</p>
         </div>
 
-        <div id="page-login" class="page-group fade-in">
-            <h2 class="page-title">1. 로그인</h2>
-            <p class="text-gray-600 mb-6">AI가 궤적을 정밀하게 분석할 수 있도록 본인 인증을 진행합니다.</p>
-            <div class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label data-testid="block-label" for="i_name"><span>이름</span></label>
-                        <input type="text" id="i_name" placeholder="예: 홍길동">
-                    </div>
-                    <div>
-                        <label data-testid="block-label" for="i_dob"><span>생년월일 (YYYYMMDD)</span></label>
-                        <input type="text" id="i_dob" placeholder="예: 19900101" maxlength="8">
-                    </div>
-                </div>
-                <div>
-                    <label data-testid="block-label" for="i_phone"><span>휴대전화 (01X-XXXX-XXXX)</span></label>
-                    <input type="tel" id="i_phone" placeholder="예: 010-1234-5678">
-                </div>
-                
-                <details id="phone-accordion">
-                    <summary>📞 휴대전화 번호가 변경되었나요? (클릭)</summary>
-                    <div>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="i_phone_changed" class="h-4 w-4 text-indigo-600">
-                            <span class="ml-2 text-sm text-gray-700">네, 이전 번호로 궤적을 이어갑니다.</span>
-                        </label>
-                        <div id="old-phone-container" class="hidden mt-2">
-                            <label data-testid="block-label" for="i_old_phone"><span>이전 휴대전화 번호</span></label>
-                            <input type="tel" id="i_old_phone" placeholder="예: 010-8765-4321">
-                        </div>
-                    </div>
-                </details>
-                
-                <button id="login-btn" class="g-button primary w-full" disabled>로그인 / 내 정보 불러오기</button>
-                <p id="o_id_status" class="text-center text-gray-500 text-sm mt-2">*(이름, 생년월일(8자리), 휴대전화(11자리 이상)를 입력하세요)*</p>
-                <p id="privacy-text">입력하신 개인정보는 AI 큐레이션 분석 및 모델 성장을 위해서만 암호화되어 저장되며, 외부에 공개되지 않습니다.</p>
-            </div>
-        </div>
-
-        <div id="page-fixed-info" class="page-group hidden fade-in">
-            <h2 class="page-title">2. 내 고정 정보 (User Profile)</h2>
-            <p class="text-gray-600 mb-6">AI가 '최적 궤적'을 탐색하는 기준이 되는 **고정 변수**를 입력합니다.</p>
+        <div id="page-simulator" class="page-group fade-in">
+            <h2 class="page-title">AI 여가 궤적 시뮬레이터</h2>
+            <p class="text-gray-600 mb-6">AI가 '최적 궤적'을 탐색하는 기준이 되는 **고정 변수**와 **현재 여가**를 입력합니다.</p>
+            
             <div class="space-y-6">
+                
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">1. 고정 정보 (나, 직업)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label data-testid="block-label" for="i_age"><span>1. 나이 (<span id="age-display">39 세</span>)</span></label>
@@ -220,8 +166,8 @@
                     <label data-testid="block-label" for="i_income"><span>5. 가구 월소득 (<span id="income-display">400 만원</span>)</span></label>
                     <input type="range" id="i_income" min="0" max="2000" step="50" value="400">
                 </div>
-                <hr>
-                <h3 class="text-lg font-semibold text-gray-800">기반 만족도 (현재 상태)</h3>
+                
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mt-6">2. 기반 만족도 (현재 상태)</h3>
                 <p class="description-text">현재 즐기고 있는 여가에 관해 답해주세요.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -233,45 +179,37 @@
                         <input type="range" id="i_time_sat" min="1" max="5" step="1" value="4">
                     </div>
                 </div>
-                <div class="flex flex-col sm:flex-row justify-between mt-4 space-y-2 sm:space-y-0 sm:space-x-4">
-                    <button id="prev-btn-2" class="g-button secondary">이전 (로그아웃)</button>
-                    <button id="next-btn-2" class="g-button primary">다음 (여가 활동 입력)</button>
-                </div>
-            </div>
-        </div>
 
-        <div id="page-simulator" class="page-group hidden fade-in">
-            <h2 class="page-title">3. 현재 여가 활동</h2>
-            <p class="text-gray-600 mb-6">현재 당신의 여가 활동을 선택하면, AI가 이 조합의 5점 만족 확률과 **미래의 '최적 궤적'**을 탐색합니다.</p>
-            <div class="space-y-6">
-                <div>
-                    <label data-testid="block-label" for="i_purpose"><span>8. 현재 여가 목적</span></label>
-                    <select id="i_purpose">
-                        <option value="1">가족/지인</option><option value="2">건강</option><option value="3">남는 시간</option>
-                        <option value="4">대인관계</option><option value="5">휴식</option><option value="6" selected>스트레스 해소</option>
-                        <option value="7">자기계발</option><option value="8">자기만족/즐거움</option><option value="9">기타</option>
-                    </select>
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mt-6">3. 현재 여가 활동</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label data-testid="block-label" for="i_purpose"><span>8. 현재 여가 목적</span></label>
+                        <select id="i_purpose">
+                            <option value="1">가족/지인</option><option value="2">건강</option><option value="3">남는 시간</option>
+                            <option value="4">대인관계</option><option value="5">휴식</option><option value="6" selected>스트레스 해소</option>
+                            <option value="7">자기계발</option><option value="8">자기만족/즐거움</option><option value="9">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_activity"><span>9. 현재 주요 활동</span></label>
+                        <select id="i_activity">
+                            <option value="1">문화예술관람</option><option value="2">문화예술직접</option><option value="3">스포츠관람</option>
+                            <option value="4">스포츠직접</option><option value="5">관광/여행</option><option value="6" selected>오락/휴식</option>
+                            <option value="7">자기계발</option><option value="8">사회교류</option><option value="nan">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_partner"><span>10. 현재 동반자</span></label>
+                        <select id="i_partner">
+                            <option value="1" selected>혼자</option><option value="2">가족/친척</option><option value="3">친구</option>
+                            <option value="4">연인</option><option value="5">직장동료</option><option value="6">동호회</option>
+                            <option value="7">기타</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label data-testid="block-label" for="i_activity"><span>9. 현재 주요 활동</span></label>
-                    <select id="i_activity">
-                        <option value="1">문화예술관람</option><option value="2">문화예술직접</option><option value="3">스포츠관람</option>
-                        <option value="4">스포츠직접</option><option value="5">관광/여행</option><option value="6" selected>오락/휴식</option>
-                        <option value="7">자기계발</option><option value="8">사회교류</option><option value="nan">기타</option>
-                    </select>
-                </div>
-                <div>
-                    <label data-testid="block-label" for="i_partner"><span>10. 현재 동반자</span></label>
-                    <select id="i_partner">
-                        <option value="1" selected>혼자</option><option value="2">가족/친척</option><option value="3">친구</option>
-                        <option value="4">연인</option><option value="5">직장동료</option><option value="6">동호회</option>
-                        <option value="7">기타</option>
-                    </select>
-                </div>
-                <div class="flex flex-col sm:flex-row justify-between mt-4 space-y-2 sm:space-y-0 sm:space-x-4">
-                    <button id="prev-btn-3" class="g-button secondary">이전 (내 정보 수정)</button>
-                    <button id="submit-btn" class="g-button primary">최적의 궤적 탐색하기 (AI 시뮬레이션)</button>
-                </div>
+                
+                <button id="submit-btn" class="g-button primary w-full mt-8">최적의 궤적 탐색하기 (AI 시뮬레이션)</button>
+                <p id="privacy-text">입력하신 정보는 AI 큐레이션 분석 및 모델 성장을 위해서만 저장되며, 외부에 공개되지 않습니다.</p>
             </div>
         </div>
 
@@ -286,69 +224,31 @@
                 <p id="o_persona" class="text-lg font-semibold text-gray-700"></p>
             </div>
             
-            <details id="history-accordion" class="mb-6 hidden">
-                <summary class="font-semibold text-gray-700">내 과거 궤적 (히스토리)</summary>
-                <div id="o_history_output" class="p-4 text-sm text-gray-600 bg-gray-50 rounded-b-lg"></div>
-            </details>
-            
             <div>
                 <label data-testid="block-label"><span>📈 '만족도 5점'을 위한 최적의 궤적 (AI 시뮬레이션)</span></label>
                 <div id="o_recommendations" class="text-gray-700 space-y-4"></div>
             </div>
             
-            <button id="restart-btn-4" class="g-button secondary w-full mt-8">다시 시뮬레이션하기 (3단계로)</button>
+            <button id="restart-btn-4" class="g-button secondary w-full mt-8">다시 시뮬레이션하기</button>
         </div>
         
     </div>
 
-    <script type="module">
-        // --- 1. Firebase 설정 (v20의 ID/궤적 저장 기능) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyDF4NmoY2lXK5hUcJ832jtTbK5e3cIty6M",
-            authDomain: "curation-5e526.firebaseapp.com",
-            projectId: "curation-5e526",
-            storageBucket: "curation-5e526.firebasestorage.app",
-            messagingSenderId: "1032425542483",
-            appId: "1:1032425542483:web:b505dc4a383ad47c3b07a6",
-            measurementId: "G-JYFX416017"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // --- 2. AI 서버(Render) 주소 ---
+    <script>
+        // --- 1. AI 서버(Render) 주소 ---
+        // [v28] '일체형' 서버이므로 '/predict'를 호출합니다.
         const AI_SERVER_URL = "/predict"; 
 
-        // --- 3. UI 요소 가져오기 ---
+        // --- 2. UI 요소 가져오기 ---
         const loadingEl = document.getElementById('loading');
-        const pageLogin = document.getElementById('page-login');
-        const pageFixedInfo = document.getElementById('page-fixed-info');
         const pageSimulator = document.getElementById('page-simulator');
         const pageResults = document.getElementById('page-results');
         
         // 버튼
-        const loginBtn = document.getElementById('login-btn');
-        const nextBtn2 = document.getElementById('next-btn-2');
-        const prevBtn2 = document.getElementById('prev-btn-2');
         const submitBtn = document.getElementById('submit-btn');
-        const prevBtn3 = document.getElementById('prev-btn-3');
         const restartBtn4 = document.getElementById('restart-btn-4');
         
-        // 로그인 입력 (v20)
-        const iName = document.getElementById('i_name');
-        const iDob = document.getElementById('i_dob');
-        const iPhone = document.getElementById('i_phone');
-        const iPhoneChanged = document.getElementById('i_phone_changed');
-        const iOldPhone = document.getElementById('i_old_phone');
-        const iOldPhoneContainer = document.getElementById('old-phone-container');
-        const oIdStatus = document.getElementById('o_id_status');
-        
-        // 고정 정보 입력 (v20)
+        // 고정 정보 입력
         const iAge = document.getElementById('i_age');
         const iGender = document.getElementById('i_gender');
         const iJob = document.getElementById('i_job');
@@ -357,17 +257,15 @@
         const iInfraSat = document.getElementById('i_infra_sat');
         const iTimeSat = document.getElementById('i_time_sat');
         
-        // 시뮬레이터 입력 (v20)
+        // 시뮬레이터 입력
         const iPurpose = document.getElementById('i_purpose');
         const iActivity = document.getElementById('i_activity');
         const iPartner = document.getElementById('i_partner');
         
-        // 결과 출력 (v20)
+        // 결과 출력
         const oModelVersion = document.getElementById('o_model_version');
         const oProbability = document.getElementById('o_probability');
         const oPersona = document.getElementById('o_persona');
-        const oHistoryAccordion = document.getElementById('history-accordion');
-        const oHistoryOutput = document.getElementById('o_history_output');
         const oRecommendations = document.getElementById('o_recommendations');
 
         // 슬라이더 값 표시
@@ -390,156 +288,15 @@
         updateSliderDisplay(iInfraSat, infraDisplay);
         updateSliderDisplay(iTimeSat, timeDisplay);
 
-        // --- 4. 상태 변수 ---
-        let currentUserId = ""; // 예: "홍길동_19900101"
-        let currentUserFile = ""; // 예: "users/홍길동_19900101" (Firestore 경로)
-        let phoneLookupRef = null; // Firestore 전화번호부 경로
-        
-        // --- 5. 핵심 로직: 화면 전환 함수 ---
+        // --- 3. 핵심 로직: 화면 전환 함수 ---
         function showPage(pageToShow) {
-            [pageLogin, pageFixedInfo, pageSimulator, pageResults, loadingEl].forEach(page => {
+            [pageSimulator, pageResults, loadingEl].forEach(page => {
                 page.style.display = 'none'; // hidden 클래스 대신 display none 사용
             });
             pageToShow.style.display = 'block';
         }
 
-        // --- 6. 핵심 로직: 로그인 (ID/궤적) ---
-        
-        // [요청 1] 로그인 버튼 활성화 검사
-        function checkLoginInputs() {
-            const name = iName.value.trim();
-            const dob = iDob.value.trim();
-            const phone = iPhone.value.trim();
-            if (name && dob && phone && dob.length === 8 && phone.length > 11) {
-                loginBtn.disabled = false;
-                oIdStatus.textContent = "✅ '로그인' 버튼을 눌러주세요.";
-            } else {
-                loginBtn.disabled = true;
-                oIdStatus.textContent = "*(이름, 생년월일(8자리), 휴대전화(11자리 이상)를 입력하세요)*";
-            }
-        }
-        [iName, iDob, iPhone].forEach(el => el.addEventListener('input', checkLoginInputs));
-        iPhoneChanged.addEventListener('change', () => {
-            iOldPhoneContainer.style.display = iPhoneChanged.checked ? 'block' : 'none';
-        });
-
-        // [요청 1] 로그인 버튼 클릭 시
-        loginBtn.addEventListener('click', async () => {
-            const name = iName.value.trim();
-            const dob = iDob.value.trim();
-            const phone = iPhone.value.trim();
-            const phoneChanged = iPhoneChanged.checked;
-            const oldPhone = iOldPhone.value.trim();
-
-            if (phoneChanged && !oldPhone) {
-                oIdStatus.textContent = "⚠️ 전화번호 변경 시, '이전 휴대전화 번호'를 입력해야 합니다.";
-                return;
-            }
-
-            currentUserId = `${name}_${dob}`;
-            currentUserFile = `users/${currentUserId}`; // Firestore 유저 궤적 경로
-            
-            showPage(loadingEl);
-            oIdStatus.textContent = "로그인 중...";
-
-            try {
-                // (이전 로직과 동일하게 익명 로그인을 먼저 수행)
-                await signInAnonymously(auth); 
-                
-                const userDocRef = doc(db, currentUserFile);
-                const userDoc = await getDoc(userDocRef);
-
-                // 전화번호 변경 로직 (v20 개선)
-                // 1. 현재 전화번호(또는 이전 전화번호)로 '전화번호부' 조회
-                const phoneToQuery = phoneChanged ? oldPhone : phone;
-                const phoneNormalized = phoneToQuery.replace(/-/g, '');
-                const phoneQuery = query(collection(db, "phone_lookup"), where("phone", "==", phoneNormalized));
-                const phoneQuerySnapshot = await getDocs(phoneQuery);
-
-                let statusMessage = "";
-                let historyText = "";
-
-                if (phoneQuerySnapshot.empty) {
-                    // 신규 사용자 또는 전화번호부 등록 안 된 기존 사용자
-                    if (userDoc.exists()) {
-                        statusMessage = `✅ **${name}**님, 환영합니다! 저장된 궤적을 불러옵니다. (전화번호부 등록)`;
-                        historyText = loadUserHistoryText(userDoc.data());
-                    } else {
-                        statusMessage = `✅ **${name}**님, 신규 사용자입니다. 궤적 저장을 시작합니다.`;
-                        historyText = "신규 사용자입니다. 저장된 궤적이 없습니다.";
-                    }
-                    // 새 전화번호부 항목 생성
-                    const newPhoneRef = doc(db, "phone_lookup", phoneNormalized);
-                    await setDoc(newPhoneRef, { userId: currentUserId, phone: phoneNormalized });
-                    phoneLookupRef = newPhoneRef; // 현재 전화번호부 참조 저장
-
-                } else {
-                    // 전화번호부에 등록된 사용자
-                    const foundPhoneDoc = phoneQuerySnapshot.docs[0];
-                    const foundUserId = foundPhoneDoc.data().userId;
-
-                    if (foundUserId === currentUserId) {
-                        // 정상 로그인
-                        statusMessage = `✅ **${name}**님, 환영합니다! 저장된 궤적을 불러옵니다.`;
-                        historyText = loadUserHistoryText(userDoc.exists() ? userDoc.data() : null);
-                        phoneLookupRef = foundPhoneDoc.ref;
-                        
-                        if (phoneChanged) {
-                            // 전화번호 변경 처리: 이전 번호 삭제, 새 번호 등록
-                            const batch = writeBatch(db);
-                            batch.delete(foundPhoneDoc.ref); // 이전 번호 삭제
-                            const newPhoneRef = doc(db, "phone_lookup", phone.replace(/-/g, ''));
-                            batch.set(newPhoneRef, { userId: currentUserId, phone: phone.replace(/-/g, '') });
-                            await batch.commit();
-                            phoneLookupRef = newPhoneRef; // 참조를 새로 업데이트
-                            statusMessage += "\n(새 전화번호로 궤적을 이전했습니다.)";
-                        }
-                    } else {
-                        // 이름/생년월일이 전화번호와 불일치
-                        statusMessage = `🚨 **오류:** 전화번호(${phoneToQuery})가 다른 사용자(${foundUserId})에게 등록되어 있습니다.`;
-                        showPage(pageLogin);
-                        oIdStatus.textContent = statusMessage;
-                        return;
-                    }
-                }
-                
-                oIdStatus.textContent = statusMessage;
-                oHistoryOutput.innerHTML = historyText;
-                oHistoryAccordion.style.display = userDoc.exists() ? 'block' : 'none';
-                
-                showPage(pageFixedInfo); // 2단계로 이동
-
-            } catch (error) {
-                console.error("Firebase 로그인/조회 오류:", error);
-                oIdStatus.textContent = `🚨 Firebase 오류: ${error.message}`;
-                showPage(pageLogin);
-            }
-        });
-        
-        // 1번 요청: 사용자 궤적 로드 (HTML로 변환)
-        function loadUserHistoryText(userData) {
-            const history = userData?.history || [];
-            if (!history.length) {
-                return "신규 사용자입니다. 저장된 궤적이 없습니다.";
-            }
-            let historyText = "";
-            history.slice(-3).reverse().forEach(record => {
-                const timestamp = record.timestamp.toDate ? record.timestamp.toDate().toLocaleString('ko-KR') : (record.timestamp || '시간 모름');
-                const prob = record.probability || 'N/A';
-                const persona = record.persona || 'N/A';
-                const top1 = (record.top_trajectories && record.top_trajectories[0]) ? record.top_trajectories[0] : {};
-                
-                historyText += `<hr class="my-2">
-                                <p><strong>${timestamp}</strong></p>
-                                <ul class="list-disc list-inside text-sm">
-                                    <li><strong>당시 확률:</strong> ${prob} | <strong>진단:</strong> ${persona}</li>
-                                    <li><strong>당시 1순위 추천:</strong> ${top1.prob || 'N/A'}% (목적: ${top1.p_name || 'N/A'}, 활동: ${top1.a_name || 'N/A'})</li>
-                                </ul>`;
-            });
-            return historyText;
-        }
-
-        // --- 7. 핵심 로직: AI 예측 (궤적 시뮬레이터) ---
+        // --- 4. 핵심 로직: AI 예측 (궤적 시뮬레이터) ---
         submitBtn.addEventListener('click', async () => {
             
             // 1. 11개 입력값 수집
@@ -567,6 +324,10 @@
                     body: JSON.stringify(inputs)
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`AI 서버가 응답하지 않습니다 (HTTP ${response.status})`);
+                }
+                
                 const data = await response.json();
 
                 // 4. 'AI 셰프'가 답장(data)을 주면, 예쁘게 표시
@@ -576,72 +337,7 @@
                     oPersona.textContent = data.persona;
                     // (Markdown을 HTML로 변환)
                     oRecommendations.innerHTML = data.recommendations
-                        .replace(/\n/g, '<br>')
-                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                        .replace(/🥇/g, '🏆');
-                    
-                    // 5. [1번 요청] Firebase에 이 결과(궤적)를 누적 저장
-                    const userDocRef = doc(db, currentUserFile);
-                    const docSnap = await getDoc(userDocRef);
-                    const existingData = docSnap.data();
-                    
-                    const history_data_to_save = {
-                        timestamp: serverTimestamp(),
-                        model_version: data.model_version,
-                        inputs: inputs, // 사용자가 입력한 11개 값
-                        probability: data.probability_5star_percent + '%',
-                        persona: data.persona,
-                        top_trajectories: data.top_trajectories || [] // (v15 서버가 top_trajectories를 반환한다고 가정)
-                    };
-                    
-                    const newHistory = existingData?.history ? [...existingData.history, history_data_to_save] : [history_data_to_save];
-
-                    await setDoc(userDocRef, {
-                        userId: currentUserId,
-                        createdAt: existingData?.createdAt || serverTimestamp(),
-                        history: newHistory
-                    }, { merge: true }); // merge: true로 덮어쓰지 않고 병합
-                    
-                    // [1번 요청] 궤적 저장 후, '과거 궤적' UI도 즉시 업데이트
-                    oHistoryOutput.innerHTML = loadUserHistoryText({ history: newHistory });
-                    oHistoryAccordion.style.display = 'block';
-
-                    // 6. 결과 화면으로 전환
-                    showPage(pageResults);
-                    
-                } else {
-                    throw new Error(data.error || "알 수 없는 오류");
-                }
-
-            } catch (error) {
-                // 7. 에러가 나면 알려줌
-                console.error("AI 서버 통신 오류:", error);
-                showPage(pageSimulator); // 3단계 화면으로 복귀
-                alert(`AI 서버 분석 중 오류가 발생했습니다: ${error.message}\n\n'AI 서버 주소(AI_SERVER_URL)'가 올바른지 확인하세요.`);
-            }
-        });
-
-        // --- 8. 화면 전환 버튼들 ---
-        
-        // 2 -> 3 (다음)
-        nextBtn2.addEventListener('click', () => showPage(pageSimulator));
-        // 2 -> 1 (이전/로그아웃)
-        prevBtn2.addEventListener('click', () => {
-            currentUserId = ""; currentUserFile = ""; phoneLookupRef = null;
-            showPage(pageLogin);
-            // 폼 초기화
-            iName.value = ""; iDob.value = ""; iPhone.value = "";
-            loginBtn.disabled = true;
-            oIdStatus.textContent = "*(이름, 생년월일(8자리), 휴대전화(11자리 이상)를 입력하세요)*";
-        });
-        // 3 -> 2 (이전)
-        prevBtn3.addEventListener('click', () => showPage(pageFixedInfo));
-        // 4 -> 3 (다시 시뮬레이션)
-        restartBtn4.addEventListener('click', () => showPage(pageSimulator));
-
-        // --- 9. 앱 시작 ---
-        showPage(pageLogin); // 첫 화면은 로그인
-        
-    </script>
-</body>
-</html>
+                        .replace(/\n\n/g, '<br><br>') // 단락 나누기
+                        .replace(/\n/g, '<br>')   // 줄바꿈
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') // 굵은 글씨
+                        .replace(/
