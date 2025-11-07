@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 여가 큐레이션 (v28)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* v23에서 요청한 '블루/그린' 테마 CSS */
+        body { 
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #F0FDF4, #F0F9FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0.5rem;
+        }
+        /* 흰색 카드 UI (모바일/웹 호환) */
+        #app-container { 
+            max-width: 900px; 
+            margin: 1rem auto; 
+            max-height: 95vh;
+            overflow-y: auto;
+            border-radius: 1.5rem; /* 둥근 모서리 */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background: white;
+            overflow: hidden; /* 내부 컴포넌트가 둥근 모서리를 따르도록 */
+        }
+        /* [요청 1] 라벨(제목)을 굵고 진한 청록색으로 */
+        label[data-testid="block-label"] { 
+            display: block; /* Gradio 모방 */
+            font-weight: 600; 
+            color: #0F766E; /* 짙은 청록색 */
+            font-size: 1.05rem; /* 살짝 크게 */
+            padding-bottom: 4px;
+        }
+        /* 그룹(화면) 스타일 */
+        .page-group { 
+            background-color: white; 
+            padding: 2rem;
+        }
+        /* 화면 제목 스타일 */
+        .page-title { 
+            font-size: 1.75rem; 
+            font-weight: 700; 
+            color: #0D9488; /* 짙은 청록색 */
+            border-bottom: 2px solid #CCFBF1; /* 연한 청록색 */
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* [요청 1] 입력창 포커스(클릭) 시 */
+        input[type="text"], input[type="number"], input[type="tel"], select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            background-color: #F9FAFB;
+        }
+        input[type="text"]:focus, 
+        input[type="number"]:focus, 
+        input[type="tel"]:focus,
+        select:focus { 
+            border-color: #0D9488 !important; 
+            box-shadow: 0 0 0 3px #A7F3D0 !important; /* 밝은 녹색 */
+            transition: all 0.2s; 
+            outline: none;
+        }
+        input[type="range"] { width: 100%; }
+        /* 결과창 디자인 */
+        #result-card { background-color: #F0FDF4; border-left: 5px solid #10B981; border-radius: 8px; padding: 1.5rem; }
+        #result-title { color: #065F46; border-bottom: 2px solid #6EE7B7; }
+        
+        /* [요청 3] '기반 만족도' 부연설명 텍스트 */
+        .description-text { 
+            color: #4B5563; 
+            font-style: italic; 
+            margin-top: -0.75rem; 
+            margin-bottom: 1rem; 
+            font-size: 0.9rem;
+        }
+        /* 버튼 스타일 */
+        .g-button { /* Gradio 버튼 모방 */
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            width: 100%; /* 모바일 대응 */
+        }
+        @media (min-width: 640px) { /* PC에서는 버튼 너비 자동 */
+             .g-button { width: 100%; } /* v25에서는 항상 100% */
+        }
+        button.primary { background: #0D9488; color: white; } /* 청록색 */
+        button.primary:hover { background: #0F766E; }
+        button.secondary { 
+            background: #F0F9FF; color: #0284C7; 
+            border: 1px solid #0284C7;
+        }
+        button.secondary:hover { background: #E0F2FE; }
+        
+        /* 개인정보보호 문구 (요청 4) */
+        #privacy-text { font-size: 12px; color: #6B7280; text-align: center; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+    
+    <div id="app-container">
+        
+        <header class="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center">
+            <h1 class="text-3xl font-bold">AI 여가 컨설턴트 (v28)</h1>
+            <p class="mt-2 text-blue-100">AI 궤적 시뮬레이터</p>
+        </header>
+
+        <div id="loading" class="text-center p-8 hidden">
+            <svg class="animate-spin h-10 w-10 text-indigo-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-gray-600">AI가 504개의 궤적을 시뮬레이션 중입니다...</p>
+        </div>
+
+        <div id="page-simulator" class="page-group fade-in">
+            <h2 class="page-title">AI 여가 궤적 시뮬레이터</h2>
+            <p class="text-gray-600 mb-6">AI가 '최적 궤적'을 탐색하는 기준이 되는 **고정 변수**와 **현재 여가**를 입력합니다.</p>
+            
+            <div class="space-y-6">
+                
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">1. 고정 정보 (나, 직업)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label data-testid="block-label" for="i_age"><span>1. 나이 (<span id="age-display">39 세</span>)</span></label>
+                        <input type="range" id="i_age" min="20" max="69" value="39">
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_gender"><span>3. 성별</span></label>
+                        <select id="i_gender">
+                            <option value="1" selected>남성</option>
+                            <option value="2">여성</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label data-testid="block-label" for="i_job"><span>2. 직업</span></label>
+                        <select id="i_job">
+                            <option value="1">자영업</option><option value="2">판매/서비스직</option><option value="3">기능/숙련공</option>
+                            <option value="4">일반작업직</option><option value="5" selected>사무직</option><option value="6">기술직</option>
+                            <option value="7">경영/관리직</option><option value="8">전문직</option><option value="9">자유직</option>
+                            <option value="10">전업주부</option><option value="11">대학(원)생</option><option value="12">무직</option>
+                            <option value="nan">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_marriage"><span>4. 결혼상태</span></label>
+                        <select id="i_marriage">
+                            <option value="1">미혼</option>
+                            <option value="2" selected>기혼</option>
+                            <option value="3">기타(이혼/사별)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label data-testid="block-label" for="i_income"><span>5. 가구 월소득 (<span id="income-display">400 만원</span>)</span></label>
+                    <input type="range" id="i_income" min="0" max="2000" step="50" value="400">
+                </div>
+                
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mt-6">2. 기반 만족도 (현재 상태)</h3>
+                <p class="description-text">현재 즐기고 있는 여가에 관해 답해주세요.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label data-testid="block-label" for="i_infra_sat"><span>6. 인프라 만족도 (<span id="infra-display">4 점</span>)</span></label>
+                        <input type="range" id="i_infra_sat" min="1" max="5" step="1" value="4">
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_time_sat"><span>7. 시간 만족도 (<span id="time-display">4 점</span>)</span></label>
+                        <input type="range" id="i_time_sat" min="1" max="5" step="1" value="4">
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mt-6">3. 현재 여가 활동</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label data-testid="block-label" for="i_purpose"><span>8. 현재 여가 목적</span></label>
+                        <select id="i_purpose">
+                            <option value="1">가족/지인</option><option value="2">건강</option><option value="3">남는 시간</option>
+                            <option value="4">대인관계</option><option value="5">휴식</option><option value="6" selected>스트레스 해소</option>
+                            <option value="7">자기계발</option><option value="8">자기만족/즐거움</option><option value="9">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_activity"><span>9. 현재 주요 활동</span></label>
+                        <select id="i_activity">
+                            <option value="1">문화예술관람</option><option value="2">문화예술직접</option><option value="3">스포츠관람</option>
+                            <option value="4">스포츠직접</option><option value="5">관광/여행</option><option value="6" selected>오락/휴식</option>
+                            <option value="7">자기계발</option><option value="8">사회교류</option><option value="nan">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label data-testid="block-label" for="i_partner"><span>10. 현재 동반자</span></label>
+                        <select id="i_partner">
+                            <option value="1" selected>혼자</option><option value="2">가족/친척</option><option value="3">친구</option>
+                            <option value="4">연인</option><option value="5">직장동료</option><option value="6">동호회</option>
+                            <option value="7">기타</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button id="submit-btn" class="g-button primary w-full mt-8">최적의 궤적 탐색하기 (AI 시뮬레이션)</button>
+                <p id="privacy-text">입력하신 정보는 AI 큐레이션 분석 및 모델 성장을 위해서만 저장되며, 외부에 공개되지 않습니다.</p>
+            </div>
+        </div>
+
+        <div id="page-results" class="page-group hidden fade-in">
+            <h2 class="page-title" id="result-title">4. AI 추천 궤적</h2>
+            <p id="o_model_version" class="text-sm text-gray-400 -mt-8 mb-6">(AI Model: v1)</p>
+            
+            <div id="result-card" class="mb-6">
+                <label data-testid="block-label" for="o_probability"><span>현재 조합의 5점 만족도 확률</span></label>
+                <p id="o_probability" class="text-4xl font-bold text-green-700">0.0%</p>
+                <label data-testid="block-label" for="o_persona" class="mt-4"><span>AI 페르소나 진단 (현재 기준)</span></label>
+                <p id="o_persona" class="text-lg font-semibold text-gray-700"></p>
+            </div>
+            
+            <div>
+                <label data-testid="block-label"><span>📈 '만족도 5점'을 위한 최적의 궤적 (AI 시뮬레이션)</span></label>
+                <div id="o_recommendations" class="text-gray-700 space-y-4"></div>
+            </div>
+            
+            <button id="restart-btn-4" class="g-button secondary w-full mt-8">다시 시뮬레이션하기</button>
+        </div>
+        
+    </div>
+
+    <script>
+        // --- 1. AI 서버(Render) 주소 ---
+        // [v28] '일체형' 서버이므로 '/predict'를 호출합니다.
+        const AI_SERVER_URL = "/predict"; 
+
+        // --- 2. UI 요소 가져오기 ---
+        const loadingEl = document.getElementById('loading');
+        const pageSimulator = document.getElementById('page-simulator');
+        const pageResults = document.getElementById('page-results');
+        
+        // 버튼
+        const submitBtn = document.getElementById('submit-btn');
+        const restartBtn4 = document.getElementById('restart-btn-4');
+        
+        // 고정 정보 입력
+        const iAge = document.getElementById('i_age');
+        const iGender = document.getElementById('i_gender');
+        const iJob = document.getElementById('i_job');
+        const iMarriage = document.getElementById('i_marriage');
+        const iIncome = document.getElementById('i_income');
+        const iInfraSat = document.getElementById('i_infra_sat');
+        const iTimeSat = document.getElementById('i_time_sat');
+        
+        // 시뮬레이터 입력
+        const iPurpose = document.getElementById('i_purpose');
+        const iActivity = document.getElementById('i_activity');
+        const iPartner = document.getElementById('i_partner');
+        
+        // 결과 출력
+        const oModelVersion = document.getElementById('o_model_version');
+        const oProbability = document.getElementById('o_probability');
+        const oPersona = document.getElementById('o_persona');
+        const oRecommendations = document.getElementById('o_recommendations');
+
+        // 슬라이더 값 표시
+        const updateSliderDisplay = (slider, display) => {
+            const suffix = slider.id.includes('income') ? ' 만원' : (slider.id.includes('age') ? ' 세' : ' 점');
+            display.textContent = slider.value + suffix;
+        };
+        const ageDisplay = document.getElementById('age-display');
+        const incomeDisplay = document.getElementById('income-display');
+        const infraDisplay = document.getElementById('infra-display');
+        const timeDisplay = document.getElementById('time-display');
+        
+        iAge.addEventListener('input', () => updateSliderDisplay(iAge, ageDisplay));
+        iIncome.addEventListener('input', () => updateSliderDisplay(iIncome, incomeDisplay));
+        iInfraSat.addEventListener('input', () => updateSliderDisplay(iInfraSat, infraDisplay));
+        iTimeSat.addEventListener('input', () => updateSliderDisplay(iTimeSat, timeDisplay));
+        // 초기값 설정
+        updateSliderDisplay(iAge, ageDisplay);
+        updateSliderDisplay(iIncome, incomeDisplay);
+        updateSliderDisplay(iInfraSat, infraDisplay);
+        updateSliderDisplay(iTimeSat, timeDisplay);
+
+        // --- 3. 핵심 로직: 화면 전환 함수 ---
+        function showPage(pageToShow) {
+            [pageSimulator, pageResults, loadingEl].forEach(page => {
+                page.style.display = 'none'; // hidden 클래스 대신 display none 사용
+            });
+            pageToShow.style.display = 'block';
+        }
+
+        // --- 4. 핵심 로직: AI 예측 (궤적 시뮬레이터) ---
+        submitBtn.addEventListener('click', async () => {
+            
+            // 1. 11개 입력값 수집
+            const inputs = {
+                'age': parseInt(iAge.value),
+                'job': iJob.value,
+                'gender': iGender.value,
+                'marriage': iMarriage.value,
+                'income': parseInt(iIncome.value),
+                'infra_sat': parseInt(iInfraSat.value),
+                'time_sat': parseInt(iTimeSat.value),
+                'purpose': iPurpose.value,
+                'activity': iActivity.value,
+                'partner': iPartner.value
+            };
+            
+            // 2. 로딩 화면 표시
+            showPage(loadingEl);
+            
+            try {
+                // 3. 'AI 주방'(Render 서버)에 주문서(JSON)를 보냄
+                const response = await fetch(AI_SERVER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(inputs)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`AI 서버가 응답하지 않습니다 (HTTP ${response.status})`);
+                }
+                
+                const data = await response.json();
+
+                // 4. 'AI 셰프'가 답장(data)을 주면, 예쁘게 표시
+                if (data.success) {
+                    oModelVersion.textContent = `(AI Model: ${data.model_version})`;
+                    oProbability.textContent = data.probability_5star_percent + '%';
+                    oPersona.textContent = data.persona;
+                    // (Markdown을 HTML로 변환)
+                    oRecommendations.innerHTML = data.recommendations
+                        .replace(/\n\n/g, '<br><br>') // 단락 나누기
+                        .replace(/\n/g, '<br>')   // 줄바꿈
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') // 굵은 글씨
+                        .replace(/
